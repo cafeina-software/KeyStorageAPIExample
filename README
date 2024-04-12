@@ -1,0 +1,20 @@
+# About
+
+This is a test and template that makes use of the Password and Key Storage API 
+of the Haiku operating system, introduced to the BeOS API for R1. It creates 
+its own keyring in order to manage its own keys. This app responds depending
+on the number of keys and if there is a key set as default (this option is
+saved in a flattened BMessage), summonning the "Add Key" dialog (no keys),
+"Select Key" dialog (no default key), and directly the app (default key was
+configured).
+
+# Compiling
+
+Open a teminal in the source code root and run
+
+make
+
+# License
+
+Licensed under MIT License.
+
