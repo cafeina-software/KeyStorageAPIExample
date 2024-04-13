@@ -24,6 +24,7 @@ public:
     status_t            RemoveAPIKey          (BKeyStore&, const char*, const char*);
     status_t            CheckForAPIKeys       (BObjectList<BKey>&, uint32*);
     void                PrepareKeyring        (BKeyStore&, const char*);
+    void                RemoveKeyring         ();
     BString             CurrentDefaultKey     ();
 private:
     void                _StandardStart        ();

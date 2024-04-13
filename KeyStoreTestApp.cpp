@@ -31,6 +31,7 @@ void KeyStoreTestApp::ReadyToRun()
         BKeyStore keystore;
         BKey key;
 
+        fprintf(stderr, "Provided key: %s\n", providedkey);
         PrepareKeyring(keystore, kAppKeyring);
         AddAPIKey(keystore, kAppKeyring, reinterpret_cast<const uint8*>(providedkey),
             providedkey);
@@ -157,15 +158,15 @@ status_t KeyStoreTestApp::CheckForAPIKeys(BObjectList<BKey>& keylist, uint32* i)
 }
 
 void KeyStoreTestApp::PrepareKeyring(BKeyStore& keystore, const char* keyringname) {
-    bool found = false;
+    bool next = true;
     uint32 cookie = 0;
     BString curkeyringname;
-    while (!found) {
+    while (next) {
         switch(keystore.GetNextKeyring(cookie, curkeyringname))
         {
             case B_OK:
                 if(strcmp(keyringname, curkeyringname.String()) == 0) {
-                    found = true;
+                    next = false;
                     fprintf(stderr, "Target keyring found.\n");
                 }
                 else
@@ -174,12 +175,19 @@ void KeyStoreTestApp::PrepareKeyring(BKeyStore& keystore, const char* keyringnam
             case B_ENTRY_NOT_FOUND:
                 keystore.AddKeyring(keyringname);
                 fprintf(stderr, "Keyring not found, creating it...\n");
+                next = false;
                 break;
             default:
+                next = false;
                 fprintf(stderr, "Error trying to access keyring.\n");
                 break;
         }
     }
+}
+
+void KeyStoreTestApp::RemoveKeyring()
+{
+    keystore.RemoveKeyring(kAppKeyring);
 }
 
 BString KeyStoreTestApp::CurrentDefaultKey  ()
