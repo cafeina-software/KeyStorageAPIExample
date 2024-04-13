@@ -15,7 +15,7 @@
 class KeyStoreTestApp : public BApplication
 {
 public:
-                        KeyStoreTestApp       ();
+                        KeyStoreTestApp       (const char* apikey = NULL);
     virtual            ~KeyStoreTestApp       ();
     virtual void        ReadyToRun            ();
     virtual void        MessageReceived       (BMessage*);
@@ -26,6 +26,7 @@ public:
     void                PrepareKeyring        (BKeyStore&, const char*);
     BString             CurrentDefaultKey     ();
 private:
+    void                _StandardStart        ();
     status_t            _LoadSettings         ();
     status_t            _SaveSettings         ();
 private:
@@ -35,6 +36,7 @@ private:
     BKeyStore           keystore;
     BMessage            currentSettings;
     BString             defaultkeyid;
+    const char*         providedkey;
 };
 
 #endif /* __KEYSTORETEST_APP_H_ */

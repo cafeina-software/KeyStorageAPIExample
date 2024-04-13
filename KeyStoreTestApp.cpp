@@ -5,8 +5,8 @@
 #include <PathFinder.h>
 // #include <thread>
 
-KeyStoreTestApp::KeyStoreTestApp()
-: BApplication(kAppSignature)
+KeyStoreTestApp::KeyStoreTestApp(const char* apikey)
+: BApplication(kAppSignature), providedkey(apikey)
 {
 	fprintf(stderr, "App start...\n");
 
@@ -27,42 +27,21 @@ KeyStoreTestApp::~KeyStoreTestApp()
 
 void KeyStoreTestApp::ReadyToRun()
 {
-    // uint32 count;
-    BObjectList<BKey> keylist;
-    // std::thread keythread(&KeyStoreTestApp::CheckForAPIKeys, this, std::ref(keylist), &count);
-    // keythread.join();
-    status_t status = CheckForAPIKeys(keylist, NULL);
-    bool hasdefault = !defaultkeyid.IsEmpty();
+    if (providedkey != NULL) {
+        BKeyStore keystore;
+        BKey key;
 
-    // keystore permission denied
-    if(status == B_NOT_ALLOWED) {
-        BAlert* alert = new BAlert("Error",
-            "Error: access to the keystore was not allowed. "
-            "The application will be closed.", "OK");
-        alert->Go();
-        Quit();
+        PrepareKeyring(keystore, kAppKeyring);
+        AddAPIKey(keystore, kAppKeyring, reinterpret_cast<const uint8*>(providedkey),
+            providedkey);
+        keystore.GetKey(kAppKeyring, B_KEY_TYPE_GENERIC, providedkey,
+            NULL, false, key);
+
+        window = new KeyStoreTestWin(key);
+        window->Show();
     }
-    // keystore access allowed, no keys
-    else if(keylist.IsEmpty()) {
-        adddlg->SetId("mainkey");
-        adddlg->Show();
-    }
-    // keystore access allowed, has key(s)
-    else {
-        if(hasdefault) {
-            BKey key;
-            if(currentSettings.FindString(_SETTINGS_DEFKEY, &defaultkeyid) == B_OK) {
-                keystore.GetKey(kAppKeyring, B_KEY_TYPE_GENERIC, defaultkeyid,
-                    NULL, false, key);
-                fprintf(stderr, "default keyid retrieved is %s\n", key.Identifier());
-            }
-            window = new KeyStoreTestWin(key);
-            window->Show();
-        }
-        else {
-            seldlg->Show();
-        }
-    }
+    else
+        _StandardStart();
 }
 
 void KeyStoreTestApp::MessageReceived(BMessage* msg)
@@ -96,6 +75,8 @@ void KeyStoreTestApp::MessageReceived(BMessage* msg)
             BKey key;
             BString keyid = msg->GetString("id");
             keystore.GetKey(kAppKeyring, B_KEY_TYPE_GENERIC, keyid.String(), NULL, key);
+            if(msg->GetBool("setasdefault", false) == true)
+                defaultkeyid = key.Identifier();
 
             window = new KeyStoreTestWin(key);
             window->Show();
@@ -123,8 +104,9 @@ bool KeyStoreTestApp::QuitRequested()
 status_t KeyStoreTestApp::AddAPIKey(BKeyStore& keystore, const char* keyring,
     const uint8* data, BString primId = "mainkey")
 {
+    size_t datalength = strlen(reinterpret_cast<const char*>(data));
     return keystore.AddKey(keyring, BKey(B_KEY_PURPOSE_GENERIC, primId.String(),
-        NULL, data, sizeof(data)));
+        NULL, data, datalength));
 }
 
 status_t KeyStoreTestApp::RemoveAPIKey(BKeyStore& keystore, const char* keyring,
@@ -203,6 +185,46 @@ void KeyStoreTestApp::PrepareKeyring(BKeyStore& keystore, const char* keyringnam
 BString KeyStoreTestApp::CurrentDefaultKey  ()
 {
     return defaultkeyid;
+}
+
+void KeyStoreTestApp::_StandardStart()
+{
+    // uint32 count;
+    BObjectList<BKey> keylist;
+    // std::thread keythread(&KeyStoreTestApp::CheckForAPIKeys, this, std::ref(keylist), &count);
+    // keythread.join();
+    status_t status = CheckForAPIKeys(keylist, NULL);
+    bool hasdefault = !defaultkeyid.IsEmpty();
+
+    // keystore permission denied
+    if(status == B_NOT_ALLOWED) {
+        BAlert* alert = new BAlert("Error",
+            "Error: access to the keystore was not allowed. "
+            "The application will be closed.", "OK");
+        alert->Go();
+        Quit();
+    }
+    // keystore access allowed, no keys
+    else if(keylist.IsEmpty()) {
+        adddlg->SetId("mainkey");
+        adddlg->Show();
+    }
+    // keystore access allowed, has key(s)
+    else {
+        if(hasdefault) {
+            BKey key;
+            if(currentSettings.FindString(_SETTINGS_DEFKEY, &defaultkeyid) == B_OK) {
+                keystore.GetKey(kAppKeyring, B_KEY_TYPE_GENERIC, defaultkeyid,
+                    NULL, false, key);
+                fprintf(stderr, "default keyid retrieved is %s\n", key.Identifier());
+            }
+            window = new KeyStoreTestWin(key);
+            window->Show();
+        }
+        else {
+            seldlg->Show();
+        }
+    }
 }
 
 status_t KeyStoreTestApp::_LoadSettings()

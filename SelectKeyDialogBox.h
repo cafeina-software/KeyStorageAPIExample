@@ -15,10 +15,12 @@ private:
 private:
     BMenuField        *keyselection;
     BPopUpMenu        *keymenu;
+    BCheckBox         *setAsDefaultCheck;
 	BButton           *selButton,
 			          *quitButton;
     BObjectList<BKey>  retrievedkeylist;
     BString            currentkeyid;
+    bool               wantsdefault;
 };
 
 #endif /* __SELECTKEYDLG_H_ */
